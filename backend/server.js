@@ -72,22 +72,20 @@ app.post('/v1/suggest', async (req, res) => {
     }
 
     // Build prompt
-    const prompt = `You are a code naming expert. Analyze this code and provide a suggestion.
+    const prompt = `Analyze this code name and provide a concise suggestion.
 
-Current name: ${name}
-Detected issue: ${issue}
+Name: "${name}"
+Issue: ${issue}
 
-Code context:
+Code:
 \`\`\`
 ${code}
 \`\`\`
 
-Respond in this EXACT format (one line):
-[Brief issue explanation]. Suggestion: [better name]
+Format: [One-line explanation]. → [better_name]
+Example: "Vague prefix 'handle'. → processRequest"
 
-Example: "Filler suffix 'Data' adds no meaning. Suggestion: users"
-
-Keep it concise and professional.`;
+Be specific and concise:`;
 
     console.log(`[${requestId}] Calling Gemini API...`);
     
@@ -106,7 +104,7 @@ Keep it concise and professional.`;
         }],
         generationConfig: {
           temperature: 0.3,
-          maxOutputTokens: 100
+          maxOutputTokens: 150
         }
       })
     });
