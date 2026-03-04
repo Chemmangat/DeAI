@@ -80,8 +80,8 @@ Example: "Vague prefix" → processRequest`;
 
     console.log(`[${requestId}] Calling Hugging Face API...`);
     
-    // Call Hugging Face Inference API (updated endpoint)
-    const hfUrl = 'https://router.huggingface.co/models/meta-llama/Llama-3.2-3B-Instruct';
+    // Call Hugging Face Inference API (chat completions format)
+    const hfUrl = 'https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-3B-Instruct/v1/chat/completions';
     
     const startTime = Date.now();
     const response = await fetch(hfUrl, {
@@ -91,12 +91,10 @@ Example: "Vague prefix" → processRequest`;
         'Authorization': `Bearer ${keyToUse}`
       },
       body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          temperature: 0.2,
-          max_new_tokens: 50,
-          return_full_text: false
-        }
+        model: 'meta-llama/Llama-3.2-3B-Instruct',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 50,
+        temperature: 0.2
       })
     });
     
@@ -137,8 +135,8 @@ Example: "Vague prefix" → processRequest`;
 
     console.log(`[${requestId}] Parsed response:`, JSON.stringify(data));
     
-    // Hugging Face returns array with generated_text
-    const suggestion = Array.isArray(data) ? data[0]?.generated_text?.trim() : data.generated_text?.trim();
+    // Chat completions format: choices[0].message.content
+    const suggestion = data.choices?.[0]?.message?.content?.trim();
 
     if (!suggestion) {
       console.error(`[${requestId}] ❌ No suggestion in response`);
