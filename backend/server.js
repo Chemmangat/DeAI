@@ -71,19 +71,16 @@ app.post('/v1/suggest', async (req, res) => {
     }
 
     // Build prompt for concise suggestion
-    const prompt = `You are a code naming expert. Analyze this name and respond in EXACTLY this format:
-"[brief reason] → [better_name]"
+    const prompt = `Analyze this code name and suggest a better one.
 
 Name: "${name}"
 Issue: ${issue}
 Code: ${code}
 
-Examples:
-- "Vague prefix" → processRequest
-- "Filler suffix" → user
-- "Too generic" → calculateTotal
+Respond in this format: "[one-line explanation] → [better_name]"
+Example: "Vague prefix that doesn't describe the action" → processUserRequest
 
-Your response (one line only):`;
+Your response:`;
 
     console.log(`[${requestId}] Calling Hugging Face API...`);
     
@@ -100,8 +97,9 @@ Your response (one line only):`;
       body: JSON.stringify({
         model: 'meta-llama/Llama-3.2-3B-Instruct',
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 50,
-        temperature: 0.2
+        max_tokens: 40,
+        temperature: 0.2,
+        stop: ["\n\n", "Example:", "Note:"]
       })
     });
     
