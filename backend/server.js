@@ -77,8 +77,8 @@ Name: "${name}"
 Issue: ${issue}
 Code: ${code}
 
-Respond in this format: "[one-line explanation] → [better_name]"
-Example: "Vague prefix that doesn't describe the action" → processUserRequest
+Respond in this format: "[one-line explanation] → **better_name**"
+Example: "Vague prefix that doesn't describe the action" → **processUserRequest**
 
 Your response:`;
 
