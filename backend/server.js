@@ -80,8 +80,8 @@ Example: "Vague prefix" → processRequest`;
 
     console.log(`[${requestId}] Calling Hugging Face API...`);
     
-    // Call Hugging Face Inference API (chat completions format)
-    const hfUrl = 'https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-3B-Instruct/v1/chat/completions';
+    // Call Hugging Face Serverless Inference API (new router endpoint)
+    const hfUrl = 'https://router.huggingface.co/v1/chat/completions';
     
     const startTime = Date.now();
     const response = await fetch(hfUrl, {
