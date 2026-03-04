@@ -16,6 +16,10 @@ const RATE_WINDOW = 60 * 60 * 1000; // 1 hour
 // Your Gemini API key (set as environment variable)
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
+if (!GEMINI_API_KEY) {
+  console.error('WARNING: GEMINI_API_KEY environment variable is not set!');
+}
+
 app.post('/v1/suggest', async (req, res) => {
   try {
     const { name, issue, code, line } = req.body;
@@ -62,7 +66,9 @@ Provide ONLY the suggested name, nothing else. The name should be:
 Suggested name:`;
 
     // Call Gemini API
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    
+    const response = await fetch(geminiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -79,16 +85,24 @@ Suggested name:`;
     });
 
     if (!response.ok) {
-      throw new Error('Gemini API error');
+      const errorText = await response.text();
+      console.error('Gemini API error:', response.status, errorText);
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('Gemini response:', JSON.stringify(data));
     const suggestion = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (!suggestion) {
+      console.error('No suggestion in response:', data);
+      throw new Error('No suggestion returned from Gemini');
+    }
 
     res.json({ suggestion });
   } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: 'Failed to generate suggestion' });
+    console.error('Error:', error.message || error);
+    res.status(500).json({ error: 'Failed to generate suggestion', details: error.message });
   }
 });
 
