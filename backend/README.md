@@ -4,10 +4,10 @@ This is the backend service that provides AI-powered rename suggestions for the 
 
 ## Features
 
-- Free tier: Unlimited requests (1500 RPM)
+- Free tier: Unlimited requests (30 RPM via Groq)
 - Premium tier: User's own API key for other models
 - Rate limiting and caching
-- Google Gemini 2.0 Flash Lite (fast and completely free!)
+- Llama 3.1 8B via Groq (fast, free, and open-source!)
 
 ## Deployment Options
 
@@ -37,7 +37,7 @@ This is the backend service that provides AI-powered rename suggestions for the 
 
 ## Environment Variables
 
-- `GEMINI_API_KEY` - Your Google Gemini API key (required) - Get it from https://aistudio.google.com/apikey
+- `GROQ_API_KEY` - Your Groq API key (required) - Get it from https://console.groq.com/keys
 - `PORT` - Server port (default: 3000)
 
 ## API Endpoint

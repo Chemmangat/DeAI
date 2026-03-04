@@ -11,19 +11,18 @@ const rateLimits = new Map();
 const RATE_LIMIT = 10; // requests per hour for free tier
 const RATE_WINDOW = 60 * 60 * 1000; // 1 hour
 
-// Your Gemini API key (set as environment variable)
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+// Your Groq API key (set as environment variable)
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 // Startup diagnostics
 console.log('=== Server Starting (v2.5-flash) ===');
 console.log('Environment:', process.env.NODE_ENV || 'development');
-console.log('API Key present:', !!GEMINI_API_KEY);
-if (GEMINI_API_KEY) {
-  console.log('API Key format:', GEMINI_API_KEY.substring(0, 10) + '...');
-  console.log('API Key length:', GEMINI_API_KEY.length);
-  console.log('API Key starts with AIza:', GEMINI_API_KEY.startsWith('AIza'));
+console.log('API Key present:', !!GROQ_API_KEY);
+if (GROQ_API_KEY) {
+  console.log('API Key format:', GROQ_API_KEY.substring(0, 10) + '...');
+  console.log('API Key length:', GROQ_API_KEY.length);
 } else {
-  console.error('❌ WARNING: GEMINI_API_KEY environment variable is not set!');
+  console.error('❌ WARNING: GROQ_API_KEY environment variable is not set!');
 }
 console.log('======================');
 
@@ -103,7 +102,7 @@ Example: "Vague prefix" → processRequest`;
     });
     
     const duration = Date.now() - startTime;
-    console.log(`[${requestId}] Gemini API response: ${response.status} ${response.statusText} (${duration}ms)`);
+    console.log(`[${requestId}] Groq API response: ${response.status} ${response.statusText} (${duration}ms)`);
     console.log(`[${requestId}] Response headers:`, Object.fromEntries(response.headers.entries()));
 
     // Get response text first for better error logging
@@ -111,27 +110,15 @@ Example: "Vague prefix" → processRequest`;
     console.log(`[${requestId}] Response body (first 500 chars):`, responseText.substring(0, 500));
 
     if (!response.ok) {
-      console.error(`[${requestId}] ❌ Gemini API error!`);
+      console.error(`[${requestId}] ❌ Groq API error!`);
       console.error(`[${requestId}] Status: ${response.status} ${response.statusText}`);
       console.error(`[${requestId}] Full response:`, responseText);
       
-      // Try to parse error details
-      let errorDetails = responseText;
-      try {
-        const errorData = JSON.parse(responseText);
-        if (errorData.error) {
-          errorDetails = `${errorData.error.code}: ${errorData.error.message} (${errorData.error.status})`;
-          console.error(`[${requestId}] Error details:`, errorData.error);
-        }
-      } catch (e) {
-        // Response is not JSON
-      }
-      
       return res.status(response.status).json({ 
-        error: 'Gemini API error',
+        error: 'Groq API error',
         status: response.status,
         statusText: response.statusText,
-        details: errorDetails,
+        details: responseText,
         requestId
       });
     }
@@ -143,7 +130,7 @@ Example: "Vague prefix" → processRequest`;
     } catch (parseError) {
       console.error(`[${requestId}] ❌ Failed to parse JSON response:`, parseError.message);
       return res.status(500).json({ 
-        error: 'Invalid JSON response from Gemini API',
+        error: 'Invalid JSON response from Groq API',
         details: responseText.substring(0, 200),
         requestId
       });
@@ -151,13 +138,13 @@ Example: "Vague prefix" → processRequest`;
 
     console.log(`[${requestId}] Parsed response:`, JSON.stringify(data));
     
-    const suggestion = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    const suggestion = data.choices?.[0]?.message?.content?.trim();
 
     if (!suggestion) {
       console.error(`[${requestId}] ❌ No suggestion in response`);
       console.error(`[${requestId}] Full data:`, JSON.stringify(data));
       return res.status(500).json({ 
-        error: 'No suggestion returned from Gemini',
+        error: 'No suggestion returned from Groq',
         details: 'Response structure unexpected',
         response: data,
         requestId
