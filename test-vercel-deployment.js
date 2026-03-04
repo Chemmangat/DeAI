@@ -1,7 +1,7 @@
 // Test the deployed Vercel API to see the actual error
 // Usage: node test-vercel-deployment.js
 
-const VERCEL_URL = 'https://de-383vc0hgh-chemmangats-projects.vercel.app';
+const VERCEL_URL = 'https://de-ai-two.vercel.app';
 
 console.log('🧪 Testing Vercel Deployment\n');
 console.log('URL:', VERCEL_URL);

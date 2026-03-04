@@ -18,7 +18,7 @@ interface CacheEntry {
   timestamp: number;
 }
 
-const BUILTIN_API_URL = 'https://de-383vc0hgh-chemmangats-projects.vercel.app/v1/suggest';
+const BUILTIN_API_URL = 'https://de-ai-two.vercel.app/v1/suggest';
 
 export class AISuggester {
   private config: AISuggesterConfig;

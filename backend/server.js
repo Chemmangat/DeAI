@@ -107,7 +107,7 @@ Suggested name:`;
         }],
         generationConfig: {
           temperature: 0.3,
-          maxOutputTokens: 50
+          maxOutputTokens: 100
         }
       })
     });
