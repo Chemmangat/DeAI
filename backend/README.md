@@ -4,10 +4,10 @@ This is the backend service that provides AI-powered rename suggestions for the 
 
 ## Features
 
-- Free tier: 10 requests/hour per IP (no API key required)
-- Premium tier: Unlimited requests with user's own API key
+- Free tier: Unlimited requests (1500 RPM)
+- Premium tier: User's own API key for other models
 - Rate limiting and caching
-- Google Gemini 2.5 Flash for suggestions (fast and free!)
+- Google Gemini 2.0 Flash Lite (fast and completely free!)
 
 ## Deployment Options
 
