@@ -82,7 +82,7 @@ Example: "Vague prefix" → processRequest`;
     console.log(`[${requestId}] Calling Gemini API...`);
     
     // Call Gemini API
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${keyToUse}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${keyToUse}`;
     
     const startTime = Date.now();
     const response = await fetch(geminiUrl, {
@@ -96,8 +96,8 @@ Example: "Vague prefix" → processRequest`;
         }],
         generationConfig: {
           temperature: 0.2,
-          maxOutputTokens: 50,
-          stopSequences: ["\n"]
+          maxOutputTokens: 100,
+          stopSequences: ["\n", "."]
         }
       })
     });
