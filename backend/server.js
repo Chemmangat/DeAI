@@ -72,23 +72,22 @@ app.post('/v1/suggest', async (req, res) => {
     }
 
     // Build prompt
-    const prompt = `You are a code naming expert. Suggest a better variable/function name.
+    const prompt = `You are a code naming expert. Analyze this code and provide a suggestion.
 
 Current name: ${name}
-Issue: ${issue}
+Detected issue: ${issue}
 
 Code context:
 \`\`\`
 ${code}
 \`\`\`
 
-Provide ONLY the suggested name, nothing else. The name should be:
-- Concise and clear
-- Follow camelCase convention
-- Describe what it is or does, not how
-- Avoid filler words like Data, Info, Object, handle, process
+Respond in this EXACT format (one line):
+[Brief issue explanation]. Suggestion: [better name]
 
-Suggested name:`;
+Example: "Filler suffix 'Data' adds no meaning. Suggestion: users"
+
+Keep it concise and professional.`;
 
     console.log(`[${requestId}] Calling Gemini API...`);
     

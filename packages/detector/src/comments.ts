@@ -69,45 +69,39 @@ export function analyzeComments(source: string): DetectionResult[] {
     const commentText = commentMatch[1];
     const column = commentStart;
     
+    let hasIssue = false;
+    
     // Check for obvious comments
     for (const pattern of OBVIOUS_PATTERNS) {
       if (pattern.test(commentText)) {
-        results.push({
-          line: lineIndex + 1,
-          column,
-          endColumn: line.length,
-          message: "Obvious comment — describes what the code does, not why. Remove it or replace with intent.",
-          severity: "warning",
-          ruleId: "no-obvious-comments"
-        });
+        hasIssue = true;
         break;
       }
     }
     
     // Check for hedge comments
-    for (const pattern of HEDGE_PATTERNS) {
-      if (pattern.test(commentText)) {
-        results.push({
-          line: lineIndex + 1,
-          column,
-          endColumn: line.length,
-          message: "Vague placeholder comment. Fix it now or remove it.",
-          severity: "info",
-          ruleId: "no-hedge-comments"
-        });
-        break;
+    if (!hasIssue) {
+      for (const pattern of HEDGE_PATTERNS) {
+        if (pattern.test(commentText)) {
+          hasIssue = true;
+          break;
+        }
       }
     }
     
     // Check for divider comments
-    if (DIVIDER_PATTERN.test(line)) {
+    if (!hasIssue && DIVIDER_PATTERN.test(line)) {
+      hasIssue = true;
+    }
+    
+    if (hasIssue) {
       results.push({
         line: lineIndex + 1,
         column,
         endColumn: line.length,
-        message: "Section divider — sign of AI-generated structure. Use file splits or named exports instead.",
+        message: `Comment`, // AI will provide explanation
         severity: "info",
-        ruleId: "no-divider-comments"
+        ruleId: "ai-comment-issue"
       });
     }
   }

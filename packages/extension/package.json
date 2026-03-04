@@ -105,7 +105,7 @@
     "commands": [
       {
         "command": "aiSlopDetector.getAISuggestion",
-        "title": "Get AI Suggestion for Better Name"
+        "title": "AI Slop: Get AI Suggestion"
       }
     ]
   },

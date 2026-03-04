@@ -2,20 +2,21 @@
 
 // Loop through the users array
 function processData(userData: any) {
-  const responseObject = [];
+  const responses = [];
+
   
   // This might need to be changed later
   for (let i = 0; i < userData.length; i++) {
     // Check if the user is active
-    const isCurrentlyActive = userData[i].active;
+    const isActive = userData[i].active;
     
-    if (isCurrentlyActive) {
-      responseObject.push(userData[i]);
+    if (isActive) {
+      responses.push(userData[i]);
     }
   }
   
   // Returns the filtered results
-  return responseObject;
+  return responses;
 }
 
 // Helper function

@@ -43,6 +43,7 @@ function isInsideString(source: string, index: number): boolean {
 export function analyzeNames(source: string): DetectionResult[] {
   const results: DetectionResult[] = [];
   const namePattern = /\b(?:const|let|var|function|class)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g;
+  const processedNames = new Set<string>(); // Track processed positions
   
   let match;
   while ((match = namePattern.exec(source)) !== null) {
@@ -62,81 +63,88 @@ export function analyzeNames(source: string): DetectionResult[] {
     const column = lines[lines.length - 1].length;
     const endColumn = column + name.length;
     
-    // Check filler suffixes
-    for (const suffix of FILLER_SUFFIXES) {
-      if (name.endsWith(suffix) && name.length > suffix.length) {
-        const suggested = name.substring(0, name.length - suffix.length);
-        const lowerSuggested = suggested.charAt(0).toLowerCase() + suggested.slice(1);
-        results.push({
-          line,
-          column,
-          endColumn,
-          message: `"${name}" — the "${suffix}" suffix adds no meaning. Try "${lowerSuggested}" instead.`,
-          severity: "warning",
-          ruleId: "no-filler-suffix"
-        });
-        break;
-      }
+    const posKey = `${line}:${column}`;
+    if (processedNames.has(posKey)) {
+      continue; // Skip duplicates
     }
     
-    // Check filler prefixes
-    for (const prefix of FILLER_PREFIXES) {
-      const prefixLower = prefix.toLowerCase();
-      const nameLower = name.toLowerCase();
-      if (nameLower.startsWith(prefixLower) && name.length > prefix.length) {
-        const remainder = name.substring(prefix.length);
-        if (/^[A-Z]/.test(remainder) || remainder.toLowerCase() === 'data') {
-          const suggested = remainder.charAt(0).toLowerCase() + remainder.slice(1);
-          results.push({
+    let issue: DetectionResult | null = null;
+    
+    // Priority order: Check most specific issues first, only report ONE per name
+    
+    // 1. Filler suffixes (highest priority)
+    if (!issue) {
+      for (const suffix of FILLER_SUFFIXES) {
+        if (name.endsWith(suffix) && name.length > suffix.length) {
+          issue = {
             line,
             column,
             endColumn,
-            message: `"${name}" — vague prefix. Consider "${suggested}" or name it after what it specifically does.`,
+            message: `Filler suffix "${suffix}"`,
             severity: "warning",
-            ruleId: "no-filler-prefix"
-          });
+            ruleId: "no-filler-suffix"
+          };
           break;
         }
       }
     }
     
-    // Check generic names
-    if (GENERIC_NAMES.includes(name.toLowerCase())) {
-      results.push({
+    // 2. Filler prefixes (only if no suffix issue)
+    if (!issue) {
+      for (const prefix of FILLER_PREFIXES) {
+        const prefixLower = prefix.toLowerCase();
+        const nameLower = name.toLowerCase();
+        if (nameLower.startsWith(prefixLower) && name.length > prefix.length) {
+          const remainder = name.substring(prefix.length);
+          if (/^[A-Z]/.test(remainder) || remainder.toLowerCase() === 'data') {
+            issue = {
+              line,
+              column,
+              endColumn,
+              message: `Vague prefix "${prefix}"`,
+              severity: "warning",
+              ruleId: "no-filler-prefix"
+            };
+            break;
+          }
+        }
+      }
+    }
+    
+    // 3. Generic names
+    if (!issue && GENERIC_NAMES.includes(name.toLowerCase())) {
+      issue = {
         line,
         column,
         endColumn,
-        message: `"${name}" is too generic. Name it after its actual purpose.`,
+        message: "Generic name",
         severity: "info",
         ruleId: "no-generic-names"
-      });
+      };
     }
     
-    // Check verbose booleans
-    for (const prefix of VERBOSE_BOOLEAN_PREFIXES) {
-      const prefixLower = prefix.toLowerCase();
-      const nameLower = name.toLowerCase();
-      if (nameLower.startsWith(prefixLower)) {
-        let suggested = '';
-        if (nameLower.startsWith('iscurrently')) {
-          suggested = 'is' + name.substring('isCurrently'.length);
-        } else if (nameLower.startsWith('hasalready')) {
-          suggested = 'has' + name.substring('hasAlready'.length);
-        } else if (nameLower.startsWith('shouldcurrently')) {
-          suggested = 'should' + name.substring('shouldCurrently'.length);
-        } else if (nameLower.startsWith('willeventually')) {
-          suggested = 'will' + name.substring('willEventually'.length);
+    // 4. Verbose booleans
+    if (!issue) {
+      for (const prefix of VERBOSE_BOOLEAN_PREFIXES) {
+        const prefixLower = prefix.toLowerCase();
+        const nameLower = name.toLowerCase();
+        if (nameLower.startsWith(prefixLower)) {
+          issue = {
+            line,
+            column,
+            endColumn,
+            message: "Verbose boolean name",
+            severity: "info",
+            ruleId: "no-verbose-booleans"
+          };
+          break;
         }
-        results.push({
-          line,
-          column,
-          endColumn,
-          message: `"${name}" — overly verbose. Try "${suggested}" instead.`,
-          severity: "info",
-          ruleId: "no-verbose-booleans"
-        });
-        break;
       }
+    }
+    
+    if (issue) {
+      processedNames.add(posKey);
+      results.push(issue);
     }
   }
   

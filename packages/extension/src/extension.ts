@@ -164,43 +164,7 @@ function updateAISuggester() {
   }
 }
 
-class AISuggestionProvider implements vscode.CodeActionProvider {
-  async provideCodeActions(
-    document: vscode.TextDocument,
-    range: vscode.Range,
-    context: vscode.CodeActionContext
-  ): Promise<vscode.CodeAction[]> {
-    if (!aiSuggester) {
-      return [];
-    }
-
-    const actions: vscode.CodeAction[] = [];
-
-    for (const diagnostic of context.diagnostics) {
-      if (diagnostic.source !== 'ai-slop-detector') {
-        continue;
-      }
-
-      const action = new vscode.CodeAction(
-        '✨ Get AI suggestion',
-        vscode.CodeActionKind.QuickFix
-      );
-
-      action.command = {
-        title: 'Get AI Suggestion',
-        command: 'aiSlopDetector.getAISuggestion',
-        arguments: [document, diagnostic]
-      };
-
-      action.diagnostics = [diagnostic];
-      actions.push(action);
-    }
-
-    return actions;
-  }
-}
-
-function analyzeDocument(document: vscode.TextDocument) {
+async function analyzeDocument(document: vscode.TextDocument) {
   const config = vscode.workspace.getConfiguration('aiSlopDetector');
   
   if (!config.get('enable', true)) {
@@ -228,8 +192,10 @@ function analyzeDocument(document: vscode.TextDocument) {
 
   const filteredIssues = result.issues.filter(issue => rules[issue.ruleId] !== false);
 
-  const diagnostics: vscode.Diagnostic[] = filteredIssues.map(issue => {
-    const line = issue.line - 1; // Convert to 0-based
+  const diagnostics: vscode.Diagnostic[] = [];
+  
+  for (const issue of filteredIssues) {
+    const line = issue.line - 1;
     const range = new vscode.Range(
       new vscode.Position(line, issue.column),
       new vscode.Position(line, issue.endColumn)
@@ -239,12 +205,39 @@ function analyzeDocument(document: vscode.TextDocument) {
       ? vscode.DiagnosticSeverity.Warning 
       : vscode.DiagnosticSeverity.Information;
 
-    const diagnostic = new vscode.Diagnostic(range, issue.message, severity);
+    let message = issue.message;
+    
+    // Get AI suggestion and add to message
+    if (aiSuggester && config.get('ai.enabled', true)) {
+      try {
+        const name = document.getText(range);
+        const contextCode = getCodeContext(source, issue.line);
+        
+        const suggestion = await aiSuggester.getSuggestion({
+          name,
+          issue: issue.message,
+          surroundingCode: contextCode,
+          lineNumber: issue.line
+        });
+        
+        if (suggestion && suggestion !== name) {
+          message = suggestion; // Just show AI's response
+        } else {
+          message = `${issue.message} (analyzing...)`; // Fallback if AI fails
+        }
+      } catch (error) {
+        console.error('AI suggestion failed:', error);
+        message = `${issue.message}.`;
+      }
+    } else {
+      message = `${issue.message}.`;
+    }
+
+    const diagnostic = new vscode.Diagnostic(range, message, severity);
     diagnostic.code = issue.ruleId;
     diagnostic.source = 'ai-slop-detector';
-
-    return diagnostic;
-  });
+    diagnostics.push(diagnostic);
+  }
 
   diagnosticCollection.set(document.uri, diagnostics);
 
