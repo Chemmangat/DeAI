@@ -72,20 +72,12 @@ app.post('/v1/suggest', async (req, res) => {
     }
 
     // Build prompt
-    const prompt = `Analyze this code name and provide a concise suggestion.
-
-Name: "${name}"
+    const prompt = `Name: "${name}"
 Issue: ${issue}
+Code: ${code}
 
-Code:
-\`\`\`
-${code}
-\`\`\`
-
-Format: [One-line explanation]. → [better_name]
-Example: "Vague prefix 'handle'. → processRequest"
-
-Be specific and concise:`;
+Give: [why it's bad] → [better name]
+Example: "Vague prefix" → processRequest`;
 
     console.log(`[${requestId}] Calling Gemini API...`);
     
@@ -103,8 +95,9 @@ Be specific and concise:`;
           parts: [{ text: prompt }]
         }],
         generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 150
+          temperature: 0.2,
+          maxOutputTokens: 50,
+          stopSequences: ["\n"]
         }
       })
     });
