@@ -70,13 +70,20 @@ app.post('/v1/suggest', async (req, res) => {
       });
     }
 
-    // Build prompt
-    const prompt = `Name: "${name}"
+    // Build prompt for concise suggestion
+    const prompt = `You are a code naming expert. Analyze this name and respond in EXACTLY this format:
+"[brief reason] → [better_name]"
+
+Name: "${name}"
 Issue: ${issue}
 Code: ${code}
 
-Give: [why it's bad] → [better name]
-Example: "Vague prefix" → processRequest`;
+Examples:
+- "Vague prefix" → processRequest
+- "Filler suffix" → user
+- "Too generic" → calculateTotal
+
+Your response (one line only):`;
 
     console.log(`[${requestId}] Calling Hugging Face API...`);
     
