@@ -15,7 +15,7 @@ const RATE_WINDOW = 60 * 60 * 1000; // 1 hour
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 // Startup diagnostics
-console.log('=== Server Starting ===');
+console.log('=== Server Starting (v2.5-flash) ===');
 console.log('Environment:', process.env.NODE_ENV || 'development');
 console.log('API Key present:', !!GEMINI_API_KEY);
 if (GEMINI_API_KEY) {
