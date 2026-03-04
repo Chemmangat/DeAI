@@ -127,6 +127,16 @@ For unlimited suggestions, use your own API key:
 }
 ```
 
+**Hugging Face:**
+```json
+{
+  "aiSlopDetector.ai.enabled": true,
+  "aiSlopDetector.ai.provider": "huggingface",
+  "aiSlopDetector.ai.apiKey": "hf_your-key-here",
+  "aiSlopDetector.ai.model": "meta-llama/Llama-3.2-3B-Instruct"
+}
+```
+
 **OpenAI-Compatible (Groq, Together, etc):**
 ```json
 {

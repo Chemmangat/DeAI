@@ -1,6 +1,6 @@
 export interface AISuggesterConfig {
   apiKey: string;
-  provider: 'openai' | 'anthropic' | 'openai-compatible' | 'builtin';
+  provider: 'openai' | 'anthropic' | 'openai-compatible' | 'huggingface' | 'builtin';
   model?: string;
   baseUrl?: string;
   enabled: boolean;
@@ -69,6 +69,8 @@ export class AISuggester {
         return this.fetchOpenAI(prompt);
       case 'anthropic':
         return this.fetchAnthropic(prompt);
+      case 'huggingface':
+        return this.fetchHuggingFace(prompt);
       default:
         return null;
     }
@@ -144,6 +146,36 @@ Suggested name:`;
 
     const data = await response.json() as any;
     const suggestion = data.content?.[0]?.text?.trim();
+    return suggestion || null;
+  }
+
+  private async fetchHuggingFace(prompt: string): Promise<string | null> {
+    const model = this.config.model || 'meta-llama/Llama-3.2-3B-Instruct';
+    const baseUrl = this.config.baseUrl || 'https://api-inference.huggingface.co';
+
+    const response = await fetch(`${baseUrl}/models/${model}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.config.apiKey}`
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          temperature: 0.3,
+          max_new_tokens: 50,
+          return_full_text: false
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Hugging Face API error: ${response.statusText}`);
+    }
+
+    const data = await response.json() as any;
+    // Hugging Face returns array with generated_text
+    const suggestion = Array.isArray(data) ? data[0]?.generated_text?.trim() : data.generated_text?.trim();
     return suggestion || null;
   }
 

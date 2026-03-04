@@ -11,18 +11,18 @@ const rateLimits = new Map();
 const RATE_LIMIT = 10; // requests per hour for free tier
 const RATE_WINDOW = 60 * 60 * 1000; // 1 hour
 
-// Your Groq API key (set as environment variable)
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
+// Your Hugging Face API key (set as environment variable)
+const HF_API_KEY = process.env.HF_API_KEY;
 
 // Startup diagnostics
-console.log('=== Server Starting (v2.5-flash) ===');
+console.log('=== Server Starting (Hugging Face) ===');
 console.log('Environment:', process.env.NODE_ENV || 'development');
-console.log('API Key present:', !!GROQ_API_KEY);
-if (GROQ_API_KEY) {
-  console.log('API Key format:', GROQ_API_KEY.substring(0, 10) + '...');
-  console.log('API Key length:', GROQ_API_KEY.length);
+console.log('API Key present:', !!HF_API_KEY);
+if (HF_API_KEY) {
+  console.log('API Key format:', HF_API_KEY.substring(0, 7) + '...');
+  console.log('API Key length:', HF_API_KEY.length);
 } else {
-  console.error('❌ WARNING: GROQ_API_KEY environment variable is not set!');
+  console.error('❌ WARNING: HF_API_KEY environment variable is not set!');
 }
 console.log('======================');
 
@@ -61,12 +61,12 @@ app.post('/v1/suggest', async (req, res) => {
     }
 
     // Validate API key
-    const keyToUse = apiKey || GEMINI_API_KEY;
+    const keyToUse = apiKey || HF_API_KEY;
     if (!keyToUse) {
       console.error(`[${requestId}] ❌ No API key available!`);
       return res.status(500).json({ 
         error: 'Server configuration error: No API key available',
-        details: 'GEMINI_API_KEY environment variable is not set'
+        details: 'HF_API_KEY environment variable is not set'
       });
     }
 
@@ -78,31 +78,30 @@ Code: ${code}
 Give: [why it's bad] → [better name]
 Example: "Vague prefix" → processRequest`;
 
-    console.log(`[${requestId}] Calling Gemini API...`);
+    console.log(`[${requestId}] Calling Hugging Face API...`);
     
-    // Call Gemini API
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${keyToUse}`;
+    // Call Hugging Face Inference API
+    const hfUrl = 'https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-3B-Instruct';
     
     const startTime = Date.now();
-    const response = await fetch(geminiUrl, {
+    const response = await fetch(hfUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${keyToUse}`
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
+        inputs: prompt,
+        parameters: {
           temperature: 0.2,
-          maxOutputTokens: 100,
-          stopSequences: ["\n", "."]
+          max_new_tokens: 50,
+          return_full_text: false
         }
       })
     });
     
     const duration = Date.now() - startTime;
-    console.log(`[${requestId}] Groq API response: ${response.status} ${response.statusText} (${duration}ms)`);
+    console.log(`[${requestId}] Hugging Face API response: ${response.status} ${response.statusText} (${duration}ms)`);
     console.log(`[${requestId}] Response headers:`, Object.fromEntries(response.headers.entries()));
 
     // Get response text first for better error logging
@@ -110,12 +109,12 @@ Example: "Vague prefix" → processRequest`;
     console.log(`[${requestId}] Response body (first 500 chars):`, responseText.substring(0, 500));
 
     if (!response.ok) {
-      console.error(`[${requestId}] ❌ Groq API error!`);
+      console.error(`[${requestId}] ❌ Hugging Face API error!`);
       console.error(`[${requestId}] Status: ${response.status} ${response.statusText}`);
       console.error(`[${requestId}] Full response:`, responseText);
       
       return res.status(response.status).json({ 
-        error: 'Groq API error',
+        error: 'Hugging Face API error',
         status: response.status,
         statusText: response.statusText,
         details: responseText,
@@ -130,7 +129,7 @@ Example: "Vague prefix" → processRequest`;
     } catch (parseError) {
       console.error(`[${requestId}] ❌ Failed to parse JSON response:`, parseError.message);
       return res.status(500).json({ 
-        error: 'Invalid JSON response from Groq API',
+        error: 'Invalid JSON response from Hugging Face API',
         details: responseText.substring(0, 200),
         requestId
       });
@@ -138,13 +137,14 @@ Example: "Vague prefix" → processRequest`;
 
     console.log(`[${requestId}] Parsed response:`, JSON.stringify(data));
     
-    const suggestion = data.choices?.[0]?.message?.content?.trim();
+    // Hugging Face returns array with generated_text
+    const suggestion = Array.isArray(data) ? data[0]?.generated_text?.trim() : data.generated_text?.trim();
 
     if (!suggestion) {
       console.error(`[${requestId}] ❌ No suggestion in response`);
       console.error(`[${requestId}] Full data:`, JSON.stringify(data));
       return res.status(500).json({ 
-        error: 'No suggestion returned from Groq',
+        error: 'No suggestion returned from Hugging Face',
         details: 'Response structure unexpected',
         response: data,
         requestId
@@ -169,7 +169,7 @@ Example: "Vague prefix" → processRequest`;
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok',
-    apiKeyConfigured: !!GEMINI_API_KEY,
+    apiKeyConfigured: !!HF_API_KEY,
     timestamp: new Date().toISOString()
   });
 });
@@ -178,10 +178,10 @@ app.get('/debug', (req, res) => {
   // Debug endpoint to check configuration
   res.json({
     environment: process.env.NODE_ENV || 'development',
-    apiKeyPresent: !!GEMINI_API_KEY,
-    apiKeyFormat: GEMINI_API_KEY ? GEMINI_API_KEY.substring(0, 10) + '...' : 'not set',
-    apiKeyLength: GEMINI_API_KEY?.length || 0,
-    apiKeyStartsCorrectly: GEMINI_API_KEY?.startsWith('AIza') || false,
+    apiKeyPresent: !!HF_API_KEY,
+    apiKeyFormat: HF_API_KEY ? HF_API_KEY.substring(0, 7) + '...' : 'not set',
+    apiKeyLength: HF_API_KEY?.length || 0,
+    apiKeyStartsCorrectly: HF_API_KEY?.startsWith('hf_') || false,
     timestamp: new Date().toISOString()
   });
 });

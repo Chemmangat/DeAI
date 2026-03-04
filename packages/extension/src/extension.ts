@@ -76,13 +76,14 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // Register code action provider for AI suggestions
-  context.subscriptions.push(
-    vscode.languages.registerCodeActionsProvider(
-      SUPPORTED_LANGUAGES.map(lang => ({ language: lang })),
-      new AISuggestionProvider(),
-      { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }
-    )
-  );
+  // Removed - using direct diagnostic messages with AI suggestions instead
+  // context.subscriptions.push(
+  //   vscode.languages.registerCodeActionsProvider(
+  //     SUPPORTED_LANGUAGES.map(lang => ({ language: lang })),
+  //     new AISuggestionProvider(),
+  //     { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }
+  //   )
+  // );
 
   // Register AI suggestion command
   context.subscriptions.push(
